@@ -2,14 +2,33 @@ import os
 import json
 import uuid
 import boto3
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
+import re
 
 BUCKET_NAME = os.environ["BUCKET_NAME"]
 TABLE_NAME = os.environ["TABLE_NAME"]
 
 s3_client = boto3.client("s3")
 dynamodb_client = boto3.client("dynamodb")
+
+
+def validator(url: str):
+    """
+    Validate urls.
+
+    :param url:
+        Just string url.
+    :return:
+        Result of validation.
+    """
+    regex = re.compile(
+        r'^(?:http|ftp)s?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+    return re.match(regex, url)
 
 
 def get_callback_url(event: dict):
@@ -22,13 +41,9 @@ def get_callback_url(event: dict):
         Callback url.
     """
     callback_url = json.loads(event["body"]).get("callback_url")
-    validator = URLValidator()
-    try:
-        validator(callback_url)
-    except ValidationError as e:
-        return None
 
-    return callback_url
+    if validator(callback_url):
+        return callback_url
 
 
 def make_record_to_dynamodb(randomized_id: str, callback_url: str) -> None:

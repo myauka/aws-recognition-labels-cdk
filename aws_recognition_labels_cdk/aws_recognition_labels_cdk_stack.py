@@ -25,12 +25,14 @@ class AwsRecognitionLabelsCdkStack(Stack):
 
         table = ddb.Table(
             self, 'cdk-rekognition-labels-myauka-results-table',
-            partition_key=ddb.Attribute(name='blob_id', type=ddb.AttributeType.STRING)
+            partition_key=ddb.Attribute(name='blob_id', type=ddb.AttributeType.STRING),
+            stream=ddb.StreamViewType.NEW_IMAGE
         )
 
         # functions
         put_blob_lambda = aws_lambda.Function(
             self, 'put_blob',
+            function_name='cdk_rekognition_labels_myauka_put_blob',
             runtime=aws_lambda.Runtime.PYTHON_3_9,
             code=aws_lambda.Code.from_asset('handlers'),
             handler='put_blob.put_blob',
@@ -42,6 +44,7 @@ class AwsRecognitionLabelsCdkStack(Stack):
 
         get_blob_lambda = aws_lambda.Function(
             self, 'get_blob_info',
+            function_name='cdk_rekognition_labels_myauka_get_blob',
             runtime=aws_lambda.Runtime.PYTHON_3_9,
             code=aws_lambda.Code.from_asset('handlers'),
             handler='get_blob_info.get_blob_info',
@@ -52,7 +55,8 @@ class AwsRecognitionLabelsCdkStack(Stack):
         )
 
         search_labels_lambda = aws_lambda.Function(
-            self, 'get_blob_info',
+            self, 'search_labels',
+            function_name='cdk_rekognition_labels_myauka_search_labels',
             runtime=aws_lambda.Runtime.PYTHON_3_9,
             code=aws_lambda.Code.from_asset('handlers'),
             handler='search_labels.process_blob',
@@ -70,6 +74,7 @@ class AwsRecognitionLabelsCdkStack(Stack):
 
         make_callback_lambda = aws_lambda.Function(
             self, 'make_callback',
+            function_name='cdk_rekognition_labels_myauka_make_callback',
             runtime=aws_lambda.Runtime.PYTHON_3_9,
             code=aws_lambda.Code.from_asset('handlers'),
             handler='make_callback.make_callback',
@@ -101,13 +106,14 @@ class AwsRecognitionLabelsCdkStack(Stack):
 
         # api gateway
         service_api = apigateway.RestApi(self, 'cdk-reko-api', rest_api_name='cdk-reko-api')
+
         blobs_post_api = service_api.root.add_resource('blobs')
         tmp = apigateway.LambdaIntegration(put_blob_lambda)
         blobs_post_api.add_method('POST', tmp)
 
-        blob_get_api = service_api.root.add_resource('blob/{blob_id}')
+        blobs_get_api = blobs_post_api.add_resource('{blob_id}')
         tmp2 = apigateway.LambdaIntegration(get_blob_lambda)
-        blob_get_api.add_method('GET', tmp2)
+        blobs_get_api.add_method('GET', tmp2)
 
         # api_with_methods = apigateway.RestApi(self, id='cdk-api-gateway-rekognition-labels')
         # put_blob_api = api_with_methods.add_method('POST')
