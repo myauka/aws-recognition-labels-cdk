@@ -1,65 +1,76 @@
+<!--
+title: 'AWS Recognition API'
+description: 'API for recognition labels on blob files.'
+layout: Doc
+framework: v3
+platform: AWS
+language: python
+priority: 2
+authorLink: 'https://github.com/myauka'
+authorName: 'Roman Orlov'
+-->
 
-# Welcome to your CDK Python project!
 
-You should explore the contents of this project. It demonstrates a CDK app with an instance of a stack (`aws_recognition_labels_cdk_stack`)
-which contains an Amazon SQS queue that is subscribed to an Amazon SNS topic.
+# AWS Recognition API
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+API for recognition labels on blob files. 
 
-This project is set up like a standard Python project.  The initialization process also creates
-a virtualenv within this project, stored under the .venv directory.  To create the virtualenv
-it assumes that there is a `python3` executable in your path with access to the `venv` package.
-If for any reason the automatic creation of the virtualenv fails, you can create the virtualenv
-manually once the init process completes.
+## Usage
 
-To manually create a virtualenv on MacOS and Linux:
+API has 2 endpoints:  
+POST /blobs - accepts callback_url for receiving callback when recognition will be ended, and return upload_url for uploading pictures.  
+GET /blobs/{blob_id} - returns information about recognition results for specified blob.
 
+### For test purposes
+
+In this tutorial I will use UPPERCASE to indicate what **needs to be replaced** or **that you will have other data here.**
+
+**Before testing endpoints**, I highly recommend you to install curl. 
+This tool will be used for testing endpoint, but feel free to use any other tool.
+
+After deployment, you will see something like this:
 ```
-$ python3 -m venv .venv
-```
+✨  Deployment time: 0.0s
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
-
-```
-$ source .venv/bin/activate
-```
-
-If you are a Windows platform, you would activate the virtualenv like this:
-
-```
-% .venv\Scripts\activate.bat
-```
-
-Once the virtualenv is activated, you can install the required dependencies.
-
-```
-$ pip install -r requirements.txt
-```
-
-At this point you can now synthesize the CloudFormation template for this code.
-
-```
-$ cdk synth
+Outputs:
+aws-recognition-labels-cdk.cdkrekoapiEndpoint = https://id.execute-api.us-east-1.amazonaws.com/prod/
 ```
 
-You can now begin exploring the source code, contained in the hello directory.
-There is also a very trivial test included that can be run like this:
-
+You will need this link to test your endpoints out. In app, I defined two endpoints for GET and POST methods. 
+Upgrade your link endpoint like this:
 ```
-$ pytest
+https://id.execute-api.us-east-1.amazonaws.com/prod/blobs/
 ```
 
-To add additional dependencies, for example other CDK libraries, just add to
-your requirements.txt file and rerun the `pip install -r requirements.txt`
-command.
+All right. From now we can send methods to our endpoints.
 
-## Useful commands
+To send POST method to your endpoint:
+```
+$ curl -X POST YOUR_ENDPOINT/blobs --data '{"callback_url": "YOUR_CALLBACK_URL"}'
+```
 
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+The answer should look like this:
+```
+{"blob_id": "BLOB_ID", "callback_url": "YOUR_CALLBACK_URL", "upload_url": "UPLOAD_URL"}
+```
 
-Enjoy!
+Save upload_url and blob_id somewhere. Then, go to directory "test_endpoints" and open "upload_file_to_s3_test.py" file.
+Put your upload url in UPLOAD_URL variable. For test purposes, I added two blob files in this directory. 
+Add path to one of this file into PATH_TO_BLOB variable. 
+Feel free to use your blob files and do not forget to add the path to your file. 
+
+After this, run "upload_file_to_s3_test.py" file. The console should display the status code. 
+If it is 200, all is well and just wait for a while.
+
+If the status code starts with the number 4 (for example, 400, 404), 
+then most likely the upload_url has expired and you will need a new one.
+
+Finally, to send GET method to your endpoint:
+```
+$ curl -X YOUR_ENDPOINT/blobs/YOUR_BLOB_ID
+```
+
+The answer should look like this:
+```
+{"blob_id": "37d878b7-2d5c-4b42-8dd2-25a0c032d9c5", "labels": [LABELS]}
+```

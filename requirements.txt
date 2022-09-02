@@ -1,2 +1,16 @@
+attrs==22.1.0
 aws-cdk-lib==2.40.0
-constructs>=10.0.0,<11.0.0
+cattrs==22.1.0
+certifi==2022.6.15
+charset-normalizer==2.1.1
+constructs==10.1.93
+exceptiongroup==1.0.0rc9
+idna==3.3
+jsii==1.66.0
+publication==0.0.3
+python-dateutil==2.8.2
+requests==2.28.1
+six==1.16.0
+typeguard==2.13.3
+typing_extensions==4.3.0
+urllib3==1.26.12

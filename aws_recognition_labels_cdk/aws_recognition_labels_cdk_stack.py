@@ -20,16 +20,17 @@ class AwsRecognitionLabelsCdkStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # definition of services
+        # S3 bucket
         bucket = s3.Bucket(self, 'cdk-rekognition-labels-myauka-blobs-bucket')
 
+        # DynamoDB table
         table = ddb.Table(
             self, 'cdk-rekognition-labels-myauka-results-table',
             partition_key=ddb.Attribute(name='blob_id', type=ddb.AttributeType.STRING),
             stream=ddb.StreamViewType.NEW_IMAGE
         )
 
-        # functions
+        # Lambda functions
         put_blob_lambda = aws_lambda.Function(
             self, 'put_blob',
             function_name='cdk_rekognition_labels_myauka_put_blob',
@@ -90,7 +91,7 @@ class AwsRecognitionLabelsCdkStack(Stack):
             )
         )
 
-        # iam
+        # Identity and Access Management
         statement = iam.PolicyStatement()
         statement.add_actions(
             "rekognition:*",
@@ -104,7 +105,7 @@ class AwsRecognitionLabelsCdkStack(Stack):
         search_labels_lambda.add_to_role_policy(statement)
         make_callback_lambda.add_to_role_policy(statement)
 
-        # api gateway
+        # Api Gateway
         service_api = apigateway.RestApi(self, 'cdk-reko-api', rest_api_name='cdk-reko-api')
 
         blobs_post_api = service_api.root.add_resource('blobs')
@@ -114,15 +115,3 @@ class AwsRecognitionLabelsCdkStack(Stack):
         blobs_get_api = blobs_post_api.add_resource('{blob_id}')
         tmp2 = apigateway.LambdaIntegration(get_blob_lambda)
         blobs_get_api.add_method('GET', tmp2)
-
-        # api_with_methods = apigateway.RestApi(self, id='cdk-api-gateway-rekognition-labels')
-        # put_blob_api = api_with_methods.add_method('POST')
-        # get_blob = api_with_methods.
-        # search_labels
-        # make_callback
-
-        # notification = aws_s3_notifications.LambdaDestination(search_labels_lambda)
-
-        # base_lambda.function_name
-
-        # bucket = s3.Bucket(self, "aws-rekognition-labels-cdk-myauka-blobs-bucket")
